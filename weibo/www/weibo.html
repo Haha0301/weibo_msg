@@ -1,0 +1,153 @@
+﻿<!doctype html>
+<html ng-app="app">
+<head>
+<meta charset="utf-8">
+<title>微博留言板</title>
+<link href="style/weibo.css" rel="stylesheet" type="text/css" />
+<script src="angular-1.5.6.js"></script>
+<script>
+	var app = angular.module('app',[]);
+	app.controller('show',function ($scope,$http) {
+        $scope.count=[];
+		$scope.con = '';
+		$scope.data = [];//{id,content,time,acc,ref}
+        //添加留言
+		$scope.add = function () {
+            //判断内容是否为空
+			if(!$scope.con){
+				return;
+			}
+			$http({
+				url:'/add',
+				method:'get',
+				params:{
+					content:$scope.con
+				}
+			}).then(function (res) {
+				var json = res.data;
+                //{error:0, id: 新添加内容的ID, time: 添加时间}
+				$scope.data.unshift({id:json.id,content:$scope.con,time:json.time,acc:0,ref:0});
+				$scope.con = '';
+			},function (res) {
+				alert(res);
+			})
+		}
+
+        //获取页数 页面一加载就显示
+        $scope.getPage = function () {
+            $http({
+                url:'/get_page',
+                method:'get',
+            }).then(function (res) {
+                //{count:页数}
+                // console.log(res);
+                for(var i=0;i<res.data.count;i++){
+                    $scope.count.push(i+1);
+                }
+            },function (res) {
+                alert(res);
+            })
+        }
+
+        //获取每页内容 页面一加载就显示
+        $scope.get = function () {
+            $http({
+                url:'/get',
+                method:'get',
+                params:{
+                    page:1
+                }
+            }).then(function (res) {
+                $scope.data=res.data;
+            },function (res) {
+                alert(res)
+            })
+        }
+
+        //顶一下
+        $scope.acc = function (index) {
+            // /acc?id=12
+            $http({
+                url:'acc',
+                method:'get',
+                params:{
+                    id:$scope.data[index].id
+                }
+            }).then(function (res) {
+                $scope.data[index].acc+=1;
+            },function (res) {
+                alert(res)
+            })
+        }
+
+        //踩一下
+        $scope.ref = function (index) {
+            // /ref?id=12
+            $http({
+                url:'ref',
+                method:'get',
+                params:{
+                    id:$scope.data[index].id
+                }
+            }).then(function (res) {
+                $scope.data[index].ref+=1;
+            },function (res) {
+                alert(res)
+            })
+        }
+
+        //删除
+        $scope.del = function (index) {
+            // /del?id=12
+            $http({
+                url:'ref',
+                method:'get',
+                params:{
+                    id:$scope.data[index].id
+                }
+            }).then(function (res) {},function (res) {
+                alert(res)
+            })
+        }
+
+        $scope.getPage();
+        $scope.get();
+
+	}) 
+</script>
+</head>
+
+<body ng-controller="show">
+<div class="znsArea">
+<!--留言-->
+     <div class="takeComment">
+        <textarea name="textarea" class="takeTextField" id="t1" ng-model="con"></textarea>
+        <div class="takeSbmComment">
+            <input type="button" class="inputs" value="" id="btn1" ng-click="add()"/>
+            <span>(可按 Enter 回复)</span>
+        </div>
+    </div>
+<!--已留-->
+    <div class="commentOn">
+        <div class="messList" id="msg_box">
+        	<div class="reply" ng-repeat="v in data | limitTo:'6'" data-id="{{v.id}}">
+                <p class="replyContent">{{v.content}}</p>
+                <p class="operation">
+                    <span class="replyTime">{{v.time|date:'yyyy-MM-dd HH:mm:ss'}}</span>
+                    <span class="handle">
+                    	<a href="javascript:;" class="top" ng-click="acc($index)">{{v.acc}}</a>
+                        <a href="javascript:;" class="down_icon" ng-click="ref($index)">{{v.ref}}</a>
+                        <a href="javascript:;" class="cut">删除</a>
+                    </span>
+                </p>
+            </div>
+        </div>
+        <div class="page" id="page_box" ng-repeat="v in count">
+        	<a href="javascript:;">{{v}}</a>
+     <!--    	<a href="javascript:;">2</a>
+        	<a href="javascript:;">3</a> -->
+        </div>
+    </div>
+</div>
+</body>
+</html>
